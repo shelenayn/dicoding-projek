@@ -6,13 +6,13 @@ from babel.numbers import format_currency
 import plotly.express as px
 sns.set(style='dark')
 
-semuanya_df = pd.read_csv("semuanya_data.csv")
+semuanya_df = pd.read_csv("https://raw.githubusercontent.com/shelenayn/dicoding/main/semuanya_data.csv")
 semuanya_df.head()
 
 semuanya_df.info()
 
-datetime_columns = ["shipping_limit_date","order_purchase_timestamp","order_approved_at","order_delivered_carrier_date","order_delivered_customer_date","order_estimated_delivery_date","review_creation_date","review_answer_timestamp"]
-semuanya_df.sort_values(by="order_approved_at", inplace=True)
+datetime_columns = ["order_delivered_customer_date","review_creation_date"]
+semuanya_df.sort_values(by="order_delivered_customer_date", inplace=True)
 semuanya_df.reset_index(inplace=True)
  
 for column in datetime_columns:
@@ -20,20 +20,12 @@ for column in datetime_columns:
 
 semuanya_df.info()
 
-min_date = semuanya_df["order_approved_at"].min()
-max_date = semuanya_df["order_approved_at"].max()
+min_date = semuanya_df["order_delivered_customer_date"].min()
+max_date = semuanya_df["order_delivered_customer_date"].max()
  
 with st.sidebar:
     st.image("https://raw.githubusercontent.com/shelenayn/dicoding/main/logo_shelena.png")
     
-    start_date, end_date = st.date_input(
-        label='Rentang Waktu',min_value=min_date,
-        max_value=max_date,
-        value=[min_date, max_date]
-    )
-
-main_df = semuanya_df[(semuanya_df["order_approved_at"] >= str(start_date)) & 
-                (semuanya_df["order_approved_at"] <= str(end_date))]
 
 st.header('Shelena Dashboard :sparkles:')
 
@@ -51,7 +43,7 @@ with col2:
  
 fig, ax = plt.subplots(figsize=(16, 8))
 ax.plot(
-    semuanya_df["order_approved_at"],
+    semuanya_df["order_delivered_customer_date"],
     semuanya_df["price"],
     marker='o', 
     linewidth=2,
@@ -62,22 +54,6 @@ ax.tick_params(axis='x', labelsize=15)
  
 st.pyplot(fig)
 
-
-st.subheader('Grafik Penjualan')
-
-monthly_sales = semuanya_df.resample('M', on='order_delivered_customer_date').agg({
-    'price': 'sum'
-})
-
-fig, ax = plt.subplots(figsize=(10, 6))
-sns.lineplot(x=monthly_sales.index, y=monthly_sales['price'], marker='o', ax=ax)
-
-plt.xlabel('Tanggal')
-plt.ylabel('Total Penjualan')
-plt.title('Progres Hasil Penjualan Bulanan')
-
-plt.grid(True)
-st.pyplot(fig)
 
 ###########################################################
 st.subheader('Grafik Kepuasan Pelanggan')
@@ -97,13 +73,14 @@ st.pyplot(fig)
 
 #############################################################################################################
 #Menyembunyikan peringatan tentang penggunaan global pyplot
+
+st.subheader('Demografi Pelanggan')
 st.set_option('deprecation.showPyplotGlobalUse', False)
 
-bystate_df = semuanya_df.groupby(by="customer_city").order_item_id.nunique().reset_index()
+bystate_df = semuanya_df.groupby(by="customer_state").order_item_id.nunique().reset_index()
 bystate_df.rename(columns={
     "order_item_id": "customer_count"
 }, inplace=True)
-bystate_df
 
 # Pengaturan warna
 colors_ = ["#72BCD4", "#D3D3D3", "#D3D3D3", "#D3D3D3", "#D3D3D3", "#D3D3D3", "#D3D3D3", "#D3D3D3"]
@@ -112,12 +89,12 @@ colors_ = ["#72BCD4", "#D3D3D3", "#D3D3D3", "#D3D3D3", "#D3D3D3", "#D3D3D3", "#D
 fig, ax = plt.subplots(figsize=(10, 5))
 sns.barplot(
     x="customer_count", 
-    y="customer_city",
+    y="customer_state",
     data=bystate_df.sort_values(by="customer_count", ascending=False),
     palette=colors_,
     ax=ax
 )
-ax.set_title("Number of Customer by Review", loc="center", fontsize=15)
+ax.set_title("Number of Customer by State", loc="center", fontsize=15)
 ax.set_ylabel(None)
 ax.set_xlabel(None)
 ax.tick_params(axis='y', labelsize=12)
